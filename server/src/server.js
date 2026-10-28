@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 5000;
 
 async function start() {
     if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is not set");
+    if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("MongoDB connected");
     await Promise.all(Object.values(models).map((m) => m.init()));
