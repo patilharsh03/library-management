@@ -8,6 +8,13 @@ export function errorHandler(err, _req, res, _next) {
     if (err instanceof AppError) {
         return res.status(err.status).json({ error: err.message, details: err.details });
     }
+    if (err.name === "ZodError") {
+        const details = err.issues.map((i) => ({
+            field: i.path.join("."),
+            message: i.message,
+        }));
+        return res.status(400).json({ error: "Validation failed", details });
+    }
     if (err.code === 11000) {
         const field = Object.keys(err.keyPattern || {})[0] || "value";
         return res.status(409).json({ error: `That ${field} already exists` });

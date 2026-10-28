@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
+import bookRoutes from "./routes/book.routes.js";
 
 export const app = express();
 
@@ -13,6 +14,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
