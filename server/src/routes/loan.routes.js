@@ -4,13 +4,17 @@ import { Loan, User } from "../models/index.js";
 import { AppError } from "../utils/AppError.js";
 import { validate } from "../middleware/validate.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
-import { issueCopy } from "../services/loanService.js";
+import { issueCopy, returnCopy } from "../services/loanService.js";
 import { calculateFine, calculateLateDays } from "../utils/fines.js";
 
 const router = Router();
 
 const issueSchema = z.object({
     memberEmail: z.string().trim().toLowerCase().email("Enter a valid member email"),
+    barcode: z.string().trim().min(1, "Barcode is required").max(40),
+});
+
+const returnSchema = z.object({
     barcode: z.string().trim().min(1, "Barcode is required").max(40),
 });
 
@@ -56,5 +60,27 @@ router.get("/mine", requireAuth, async (req, res) => {
         })),
     });
 });
+
+router.post(
+    "/return", requireAuth, requireRole("librarian"), validate(returnSchema),
+    async (req, res) => {
+        const { loan, lateDays, fineAmount, reservation } = await returnCopy({
+            barcode: req.body.barcode,
+        });
+
+        const populated = await Loan.findById(loan._id)
+            .populate("book", "title author")
+            .populate("member", "name email")
+            .populate("copy", "barcode")
+
+        let heldFor = null;
+        if (reservation) {
+            const m = await User.findById(reservation.member).select("name email");
+            heldFor = { name: m.name, email: m.email };
+        }
+
+        res.json({ loan: populated, lateDays, fineAmount, heldFor });
+    }
+)
 
 export default router;

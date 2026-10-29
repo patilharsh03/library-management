@@ -1,6 +1,7 @@
 import { Copy, Loan, Reservation, User } from "../models/index.js";
 import { AppError } from "../utils/AppError.js";
-import { calculateDueDate } from "../utils/fines.js";
+import { calculateDueDate, calculateFine, calculateLateDays } from "../utils/fines.js";
+import { offerCopyToQueue } from "./reservationService.js";
 import { MAX_ACTIVE_LOANS } from "../config.js";
 
 export async function issueCopy({ barcode, memberId, librarianId }) {
@@ -64,4 +65,28 @@ export async function issueCopy({ barcode, memberId, librarianId }) {
     }
 
     return loan;
+}
+
+export async function returnCopy({ barcode }) {
+    const copy = await Copy.findOne({ barcode });
+    if (!copy) throw new AppError(404, "No copy found with that barcode");
+
+    const openLoan = await Loan.findOne({ copy: copy._id, returnedAt: null });
+    if (!openLoan) throw new AppError(409, "This copy is not currently issued");
+
+    const returnedAt = new Date();
+    const lateDays = calculateLateDays(openLoan.dueAt, returnedAt);
+    const fineAmount = calculateFine(openLoan.dueAt, returnedAt);
+
+    // Close the loan only if it is still open (protects against double returns).
+    const loan = await Loan.findOneAndUpdate(
+        { _id: openLoan._id, returnedAt: null },
+        { $set: { returnedAt, fineAmount } },
+        { returnDocument: "after" }
+    );
+    if (!loan) throw new AppError(409, "This copy has just been returned");
+
+    const reservation = await offerCopyToQueue(copy);
+
+    return { loan, lateDays, fineAmount, reservation };
 }
