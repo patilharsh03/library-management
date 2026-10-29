@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { Book, Copy } from "../models/index.js";
+import { Book, Copy, Reservation } from "../models/index.js";
 import { AppError } from "../utils/AppError.js";
 import { validate } from "../middleware/validate.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { fillQueueFromAvailableCopies } from "../services/reservationService.js";
 
 const router = Router();
 
@@ -46,11 +47,12 @@ async function addCopies(book, count) {
 }
 
 async function copyCounts(bookId) {
-    const [totalCopies, availableCopies] = await Promise.all([
+    const [totalCopies, availableCopies, waitingReservations] = await Promise.all([
         Copy.countDocuments({ book: bookId }),
         Copy.countDocuments({ book: bookId, status: "available" }),
+        Reservation.countDocuments({ book: bookId, status: "waiting"}),
     ]);
-    return { totalCopies, availableCopies };
+    return { totalCopies, availableCopies, waitingReservations };
 }
 
 // ---------- routes ----------
@@ -133,6 +135,7 @@ router.post(
         const book = await Book.findById(req.params.id);
         if (!book) throw new AppError(404, "Book not found");
         await addCopies(book, req.body.count);
+        await fillQueueFromAvailableCopies(book._id);
         res.status(201).json({ ...(await copyCounts(book._id)) });
     }
 );

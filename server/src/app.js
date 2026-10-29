@@ -4,6 +4,7 @@ import authRoutes from "./routes/auth.routes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import bookRoutes from "./routes/book.routes.js";
 import loanRoutes from "./routes/loan.routes.js";
+import reservationRoutes from "./routes/reservation.routes.js";
 
 export const app = express();
 
@@ -17,6 +18,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/loans", loanRoutes);
+app.use("/api/reservations", reservationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
