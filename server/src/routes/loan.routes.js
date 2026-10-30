@@ -83,4 +83,32 @@ router.post(
     }
 )
 
+// Librarian: all overdue, unreturned loans, most overdue first
+router.get("/overdue", requireAuth, requireRole("librarian"), async (_req, res) => {
+    const now = new Date();
+
+    const loans = await Loan.find({ returnedAt: null, dueAt: { $lt: now } })
+        .sort({ dueAt: 1 })
+        .populate("member", "name email")
+        .populate("book", "title author")
+        .populate("copy", "barcode")
+        .lean();
+
+    const overdue = loans
+        .map((l) => ({
+            loanId: l._id,
+            member: l.member,
+            book: l.book,
+            barcode: l.copy.barcode,
+            issuedAt: l.issuedAt,
+            dueAt: l.dueAt,
+            lateDays: calculateLateDays(l.dueAt, now),
+            fine: calculateFine(l.dueAt, now),
+        }))
+        .filter((l) => l.lateDays > 0);
+
+    const totalFine = overdue.reduce((sum, l) => sum + l.fine, 0);
+    res.json({ overdue, count: overdue.length, totalFine });
+});
+
 export default router;
