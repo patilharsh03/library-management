@@ -55,6 +55,7 @@ router.get("/mine", requireAuth, async (req, res) => {
     res.json({
         loans: loans.map((l) => ({
             ...l,
+            lateDays: calculateLateDays(l.dueAt, l.returnedAt || now),
             isOverdue: !l.returnedAt && calculateLateDays(l.dueAt, now) > 0,
             currentFine: l.returnedAt ? l.fineAmount : calculateFine(l.dueAt, now),
         })),
