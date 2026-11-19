@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import AvailabilityBadge from "@/components/AvailabilityBadge";
 import Alert from "@/components/Alert";
+import LibrarianPanel from "@/components/LibrarianPanel";
 
 export default function BookPage() {
     const { id } = useParams();
@@ -90,7 +91,7 @@ export default function BookPage() {
                 <p className="text-slate-600">
                     Librarian accounts manage loans from the Desk. Reservations are made by members.
                 </p>
-            );
+            )
         }
 
         if (myReservation) {
@@ -180,6 +181,10 @@ export default function BookPage() {
                         {error && <Alert>{error}</Alert>}
                         {renderAction()}
                     </div>
+
+                    {user?.role === "librarian" && (
+                        <LibrarianPanel bookId={id} token={token} onChange={loadBook} />
+                    )}
                 </div>
             )}
         </div>

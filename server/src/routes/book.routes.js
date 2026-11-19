@@ -144,7 +144,9 @@ router.post(
 router.get("/:id/copies", requireAuth, requireRole("librarian"), async (req, res) => {
     const book = await Book.findById(req.params.id);
     if (!book) throw new AppError(404, "Book not found");
-    const copies = await Copy.find({ book: book._id }).sort({ barcode: 1 });
+    const copies = await Copy.find({ book: book._id })
+    .sort({ barcode: 1 })
+    .populate("heldFor", "name email");
     res.json({ copies });
 });
 

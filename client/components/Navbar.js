@@ -18,6 +18,7 @@ export default function Navbar() {
     if (user?.role === "librarian") {
         links.push({ href: "/desk", label: "Desk" });
         links.push({ href: "/overdue", label: "Overdue" });
+        links.push({ href: "/books/new", label: "Add book" })
     }
 
     function handleLogout() {
