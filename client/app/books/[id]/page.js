@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
@@ -9,7 +9,7 @@ import AvailabilityBadge from "@/components/AvailabilityBadge";
 import Alert from "@/components/Alert";
 import LibrarianPanel from "@/components/LibrarianPanel";
 
-export default function BookPage() {
+function BookDetail() {
     const { id } = useParams();
     const { user, token, loading: authLoading } = useAuth();
 
@@ -189,4 +189,12 @@ export default function BookPage() {
             )}
         </div>
     );
+}
+
+export default function BookPage() {
+    return (
+        <Suspense fallback={<div className="h-48 animate-pulse rounded-xl bg-slate-200" />}>
+            <BookDetail />
+        </Suspense>
+    )
 }
